@@ -39,6 +39,17 @@ export const uploadVideo = async (req, res, next) => {
     const userTargetLang = req.body.targetLang || "en";
     const translatedText = await translateText(transcript, detectedLang, userTargetLang);
 
+    // Print transcript and translation
+    console.log("\n" + "=".repeat(80));
+    console.log("ORIGINAL TRANSCRIPT (" + detectedLang + "):");
+    console.log("=".repeat(80));
+    console.log(transcript);
+    console.log("\n" + "=".repeat(80));
+    console.log("TRANSLATED TEXT (" + userTargetLang + "):");
+    console.log("=".repeat(80));
+    console.log(translatedText);
+    console.log("=".repeat(80) + "\n");
+
     // Step 5: Generate subtitle files
     const subtitlePaths = generateWebVTT(words, outputPath, translatedText);
 
