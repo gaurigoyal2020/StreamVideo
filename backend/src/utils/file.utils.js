@@ -1,32 +1,51 @@
 import fs from "fs";
+import path from "path";
 import { v4 as uuidv4 } from "uuid";
 
-/**
- * Generate unique lesson ID
- */
-export const generateLessonId = () => {
-  return uuidv4();
-};
+export const generateLessonId = () => uuidv4();
 
-/**
- * Create directory if it doesn't exist
- */
 export const ensureDirectoryExists = (dirPath) => {
   if (!fs.existsSync(dirPath)) {
     fs.mkdirSync(dirPath, { recursive: true });
   }
 };
 
+export const readFileAsBuffer = (filePath) => fs.readFileSync(filePath);
+
+export const writeFile = (filePath, content) =>
+  fs.writeFileSync(filePath, content);
+
 /**
- * Read file as buffer
+ * Deletes a single file. Logs but does not throw if missing.
  */
-export const readFileAsBuffer = (filePath) => {
-  return fs.readFileSync(filePath);
+export const deleteFile = (filePath) => {
+  try {
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+  } catch (err) {
+    console.warn(`⚠️  Could not delete file ${filePath}:`, err.message);
+  }
 };
 
 /**
- * Write content to file
+ * Deletes a directory and all its contents recursively.
+ * Logs but does not throw on failure.
  */
-export const writeFile = (filePath, content) => {
-  fs.writeFileSync(filePath, content);
+export const deleteDirectory = (dirPath) => {
+  try {
+    if (fs.existsSync(dirPath)) {
+      fs.rmSync(dirPath, { recursive: true, force: true });
+    }
+  } catch (err) {
+    console.warn(`⚠️  Could not delete directory ${dirPath}:`, err.message);
+  }
+};
+
+/**
+ * Ensures the base uploads directory exists on startup.
+ */
+export const ensureUploadsDir = () => {
+  const dirs = ["./uploads", "./uploads/courses"];
+  dirs.forEach(ensureDirectoryExists);
 };

@@ -1,379 +1,351 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Film, Globe, Subtitles, CheckCircle, AlertCircle, Loader2, Play, Download } from 'lucide-react';
-import videojs from 'video.js';
-import 'video.js/dist/video-js.css';
+import React, { useState } from 'react';
+import {
+  Upload, CheckCircle, AlertCircle,
+  Captions, ChevronDown, LayoutDashboard,
+  FolderOpen, Settings, CreditCard
+} from 'lucide-react';
+import ResultsPage from './ResultsPage';
+import ProcessingPage from './ProcessingPage';
 import './index.css';
 
-const VideoPlayer = ({ videoUrl, subtitleUrl, translatedSubtitleUrl }) => {
-  const videoRef = useRef(null);
-  const playerRef = useRef(null);
+/* ─── Pixel Sun Cat ──────────────────────────────────────────────── */
+const SunCat = ({ className = '' }) => (
+  <svg
+    className={className}
+    width="56" height="56"
+    viewBox="0 0 21 16"
+    style={{ imageRendering: 'pixelated' }}
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    {/* Ears */}
+    <rect x="4" y="0" width="2" height="1" fill="#e8821a"/>
+    <rect x="3" y="1" width="3" height="1" fill="#e8821a"/>
+    <rect x="4" y="1" width="1" height="1" fill="#f5a84b"/>
+    <rect x="15" y="0" width="2" height="1" fill="#e8821a"/>
+    <rect x="15" y="1" width="3" height="1" fill="#e8821a"/>
+    <rect x="16" y="1" width="1" height="1" fill="#f5a84b"/>
+    {/* Head */}
+    <rect x="3" y="2" width="15" height="1" fill="#e8821a"/>
+    <rect x="2" y="3" width="17" height="2" fill="#e8821a"/>
+    {/* Tabby stripes */}
+    <rect x="8"  y="2" width="1" height="2" fill="#c45f0a"/>
+    <rect x="10" y="2" width="1" height="2" fill="#c45f0a"/>
+    <rect x="12" y="2" width="1" height="2" fill="#c45f0a"/>
+    {/* Eyes */}
+    <rect x="1" y="5" width="19" height="3" fill="#e8821a"/>
+    <rect x="3" y="5" width="5"  height="3" fill="#ffffff"/>
+    <rect x="13" y="5" width="5" height="3" fill="#ffffff"/>
+    <rect x="5"  y="5" width="1" height="3" fill="#1a2e3d"/>
+    <rect x="15" y="5" width="1" height="3" fill="#1a2e3d"/>
+    {/* Below eyes / nose */}
+    <rect x="2" y="8" width="17" height="1" fill="#e8821a"/>
+    <rect x="2" y="9" width="17" height="1" fill="#e8821a"/>
+    <rect x="9" y="9" width="3"  height="1" fill="#d4622a"/>
+    {/* Mouth */}
+    <rect x="2"  y="10" width="17" height="1" fill="#e8821a"/>
+    <rect x="6"  y="10" width="1"  height="1" fill="#ffe4b5"/>
+    <rect x="7"  y="10" width="7"  height="1" fill="#1a2e3d"/>
+    <rect x="14" y="10" width="1"  height="1" fill="#ffe4b5"/>
+    <rect x="3"  y="11" width="15" height="1" fill="#e8821a"/>
+    <rect x="7"  y="11" width="1"  height="1" fill="#ffe4b5"/>
+    <rect x="8"  y="11" width="5"  height="1" fill="#1a2e3d"/>
+    <rect x="13" y="11" width="1"  height="1" fill="#ffe4b5"/>
+    <rect x="4"  y="12" width="13" height="1" fill="#e8821a"/>
+    <rect x="8"  y="12" width="1"  height="1" fill="#ffe4b5"/>
+    <rect x="9"  y="12" width="3"  height="1" fill="#1a2e3d"/>
+    <rect x="12" y="12" width="1"  height="1" fill="#ffe4b5"/>
+    <rect x="5"  y="13" width="11" height="1" fill="#e8821a"/>
+    <rect x="10" y="13" width="1"  height="1" fill="#ffe4b5"/>
+    {/* Whiskers */}
+    <rect x="0"  y="7" width="2" height="1" fill="#f5a84b"/>
+    <rect x="19" y="7" width="2" height="1" fill="#f5a84b"/>
+  </svg>
+);
 
-  useEffect(() => {
-    if (!playerRef.current && videoUrl) {
-      const videoElement = document.createElement('video-js');
-      videoElement.classList.add('vjs-big-play-centered');
-      videoRef.current.appendChild(videoElement);
+/* ─── Scene Background ───────────────────────────────────────────── */
+const SceneBg = () => (
+  <div className="scene-bg" aria-hidden="true">
+    <div className="scene-moon">🌙</div>
+    <div className="scene-star s1">✦</div>
+    <div className="scene-star s2">✦</div>
+    <div className="scene-star s3">·</div>
+    <div className="scene-hydrangea h1">❋</div>
+    <div className="scene-hydrangea h2">❋</div>
+    <div className="scene-hydrangea h3">❋</div>
+    <div className="scene-mascot-left"><SunCat /></div>
+  </div>
+);
 
-      const tracks = [];
-      if (subtitleUrl) {
-        tracks.push({
-          kind: 'subtitles',
-          src: subtitleUrl,
-          srclang: 'en',
-          label: 'Original'
-        });
-      }
-      if (translatedSubtitleUrl) {
-        tracks.push({
-          kind: 'subtitles',
-          src: translatedSubtitleUrl,
-          srclang: 'target',
-          label: 'Translated'
-        });
-      }
+/* ─── Sidebar ────────────────────────────────────────────────────── */
+const navItems = [
+  { icon: LayoutDashboard, label: 'Dashboard'  },
+  { icon: FolderOpen,      label: 'Projects'   },
+  { icon: Upload,          label: 'Uploads', active: true },
+  { icon: Captions,        label: 'Subtitles'  },
+  { icon: CreditCard,      label: 'My Plan'    },
+  { icon: Settings,        label: 'Settings'   },
+];
 
-      const player = playerRef.current = videojs(videoElement, {
-        controls: true,
-        responsive: true,
-        fluid: true,
-        sources: [{
-          src: videoUrl,
-          type: 'application/x-mpegURL'
-        }],
-        tracks: tracks
-      });
-    }
-
-    return () => {
-      if (playerRef.current && !playerRef.current.isDisposed()) {
-        playerRef.current.dispose();
-        playerRef.current = null;
-      }
-    };
-  }, [videoUrl, subtitleUrl, translatedSubtitleUrl]);
-
-  return (
-    <div className="video-player-wrapper" data-vjs-player>
-      <div ref={videoRef} />
+const Sidebar = () => (
+  <aside className="sidebar">
+    <div className="sidebar-logo">
+      <SunCat />
+      <span className="logo-text">HydraSubs</span>
     </div>
-  );
-};
+    <nav className="sidebar-nav">
+      {navItems.map(({ icon: Icon, label, active }) => (
+        <div key={label} className={`nav-item ${active ? 'nav-item--active' : ''}`}>
+          <Icon size={18} />
+          <span>{label}</span>
+        </div>
+      ))}
+    </nav>
+    <div className="sidebar-footer">
+      <div className="plan-label">Free Plan</div>
+      <div className="plan-sub">2 of 5 uploads used</div>
+      <div className="plan-bar">
+        <div className="plan-bar-fill" style={{ width: '40%' }} />
+      </div>
+      <button className="btn-upgrade">Upgrade Plan</button>
+    </div>
+  </aside>
+);
 
+/* ─── Feature Cards Data ─────────────────────────────────────────── */
+const features = [
+  { icon: '🧠', title: 'AI-Powered',      desc: 'Advanced AI for high accuracy transcription' },
+  { icon: '🌍', title: 'Multi-Language',  desc: 'Translate to 100+ languages' },
+  { icon: 'T',  title: 'Customizable',   desc: 'Edit and style your subtitles' },
+  { icon: '⬇',  title: 'Export Anywhere', desc: 'SRT, VTT, ASS and more' },
+];
+
+/* ─── Languages ──────────────────────────────────────────────────── */
+const languages = [
+  { code: 'en', name: 'English'    }, { code: 'es', name: 'Spanish'    },
+  { code: 'fr', name: 'French'     }, { code: 'de', name: 'German'     },
+  { code: 'hi', name: 'Hindi'      }, { code: 'zh', name: 'Chinese'    },
+  { code: 'ja', name: 'Japanese'   }, { code: 'ko', name: 'Korean'     },
+  { code: 'pt', name: 'Portuguese' }, { code: 'ru', name: 'Russian'    },
+  { code: 'ar', name: 'Arabic'     }, { code: 'it', name: 'Italian'    },
+];
+
+/* ─── App ────────────────────────────────────────────────────────── */
 function App() {
-  const [file, setFile] = useState(null);
+  const [file,       setFile]       = useState(null);
   const [targetLang, setTargetLang] = useState('en');
-  const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState(null);
+  const [uploading,  setUploading]  = useState(false);
+  const [progress,   setProgress]   = useState(0);
+  const [result,     setResult]     = useState(null);
+  const [error,      setError]      = useState(null);
   const [dragActive, setDragActive] = useState(false);
 
-  const languages = [
-    { code: 'en', name: 'English' },
-    { code: 'es', name: 'Spanish' },
-    { code: 'fr', name: 'French' },
-    { code: 'de', name: 'German' },
-    { code: 'hi', name: 'Hindi' },
-    { code: 'zh', name: 'Chinese' },
-    { code: 'ja', name: 'Japanese' },
-    { code: 'ko', name: 'Korean' },
-    { code: 'pt', name: 'Portuguese' },
-    { code: 'ru', name: 'Russian' },
-    { code: 'ar', name: 'Arabic' },
-    { code: 'it', name: 'Italian' }
-  ];
-
+  /* ── Drag handlers ── */
   const handleDrag = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
+    e.preventDefault(); e.stopPropagation();
+    setDragActive(e.type === 'dragenter' || e.type === 'dragover');
   };
 
   const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+    e.preventDefault(); e.stopPropagation();
     setDragActive(false);
-    
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const droppedFile = e.dataTransfer.files[0];
-      if (droppedFile.type.startsWith('video/')) {
-        setFile(droppedFile);
-        setError(null);
-      } else {
-        setError('Please upload a valid video file');
-      }
-    }
+    const f = e.dataTransfer.files?.[0];
+    if (!f) return;
+    if (f.type.startsWith('video/')) { setFile(f); setError(null); }
+    else setError('Please upload a valid video file');
   };
 
   const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      const selectedFile = e.target.files[0];
-      if (selectedFile.type.startsWith('video/')) {
-        setFile(selectedFile);
-        setError(null);
-      } else {
-        setError('Please upload a valid video file');
-      }
-    }
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (f.type.startsWith('video/')) { setFile(f); setError(null); }
+    else setError('Please upload a valid video file');
   };
 
+  /* ── Upload ── */
   const handleUpload = async () => {
-    if (!file) {
-      setError('Please select a video file');
-      return;
-    }
+    if (!file) { setError('Please select a video file'); return; }
 
     const formData = new FormData();
     formData.append('file', file);
     formData.append('targetLang', targetLang);
 
-    setUploading(true);
-    setError(null);
-    setProgress(0);
+    setUploading(true); setError(null); setProgress(0);
 
-    const progressInterval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 90) {
-          clearInterval(progressInterval);
-          return 90;
-        }
-        return prev + 10;
+    const interval = setInterval(() => {
+      setProgress(p => {
+        if (p >= 90) { clearInterval(interval); return 90; }
+        return p + 10;
       });
     }, 500);
 
     try {
-      const response = await fetch('http://localhost:8000/upload', {
-        method: 'POST',
-        body: formData
-      });
-
-      clearInterval(progressInterval);
-      setProgress(100);
-
-      if (!response.ok) {
-        throw new Error('Upload failed');
-      }
-
-      const data = await response.json();
-      setResult(data);
+      // AFTER
+      const res = await fetch('http://localhost:8000/api/upload', { method: 'POST', body: formData });
+      clearInterval(interval); setProgress(100);
+      if (!res.ok) throw new Error('Upload failed');
+      const json = await res.json();
+      setResult(json.data);
       setTimeout(() => setUploading(false), 500);
-    } catch (err) {
-      clearInterval(progressInterval);
+    } catch {
+      clearInterval(interval);
       setError('Failed to process video. Please try again.');
       setUploading(false);
       setProgress(0);
     }
   };
 
+  /* ── Reset ── */
   const resetForm = () => {
-    setFile(null);
-    setResult(null);
-    setError(null);
-    setProgress(0);
+    setFile(null); setResult(null);
+    setError(null); setProgress(0); setUploading(false);
   };
 
+  /* ── Render ─────────────────────────────────────────────────────── */
   return (
-    <div style={{ minHeight: '100vh' }}>
-      <div className="container">
-        {/* Header */}
-        <div className="header">
-          <div className="header-title-wrapper">
-            <Film className="header-icon" />
-            <h1 className="header-title">VideoTranscribe</h1>
-          </div>
-          <p className="header-subtitle">
-            Upload your videos and get automatic transcription with multilingual subtitle generation
-          </p>
-        </div>
+    <div className="app-layout">
+      <Sidebar />
 
-        {!result ? (
-          <div className="card">
-            {/* Upload Area */}
-            <div
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
-              onDrop={handleDrop}
-              className={`upload-area ${dragActive ? 'drag-active' : ''}`}
-            >
-              <input
-                type="file"
-                accept="video/*"
-                onChange={handleFileChange}
-                disabled={uploading}
-              />
-              
-              <div className="upload-content">
-                <Upload className="upload-icon" />
-                <p className="upload-title">
-                  {file ? file.name : 'Drop your video here'}
-                </p>
-                <p className="upload-subtitle">
-                  or click to browse • MP4, MOV, AVI, MKV
-                </p>
-              </div>
+      <main className="main-content">
 
-              {file && (
-                <div className="file-info">
-                  <CheckCircle />
-                  <span>{(file.size / (1024 * 1024)).toFixed(2)} MB</span>
-                </div>
-              )}
-            </div>
+        {/* ════ STATE 1 — Processing ════ */}
+        {uploading ? (
+          <ProcessingPage
+            progress={progress}
+            file={file}
+            onBackground={() => {}}
+          />
 
-            {/* Language Selection */}
-            <div className="form-group">
-              <label className="form-label">
-                <Globe />
-                Target Translation Language
-              </label>
-              <select
-                value={targetLang}
-                onChange={(e) => setTargetLang(e.target.value)}
-                disabled={uploading}
-              >
-                {languages.map(lang => (
-                  <option key={lang.code} value={lang.code}>
-                    {lang.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+        /* ════ STATE 2 — Results ════ */
+        ) : result ? (
+          <ResultsPage
+            result={result}
+            file={file}
+            targetLang={targetLang}
+            onReset={resetForm}
+          />
 
-            {/* Error Message */}
-            {error && (
-              <div className="alert alert-error">
-                <AlertCircle />
-                <p>{error}</p>
-              </div>
-            )}
-
-            {/* Upload Button */}
-            <button
-              onClick={handleUpload}
-              disabled={!file || uploading}
-              className="btn btn-primary"
-              style={{ marginTop: '2rem' }}
-            >
-              {uploading ? (
-                <>
-                  <Loader2 className="animate-spin" />
-                  Processing... {progress}%
-                </>
-              ) : (
-                <>
-                  <Subtitles />
-                  Generate Subtitles
-                </>
-              )}
-            </button>
-
-            {/* Progress Bar */}
-            {uploading && (
-              <div className="progress-bar-container">
-                <div
-                  className="progress-bar"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-            )}
-          </div>
+        /* ════ STATE 3 — Upload page ════ */
         ) : (
-          <div>
-            {/* Video Player */}
-            <div className="card video-section">
-              <h2 className="section-title">
-                <Play />
-                Your Video
-              </h2>
-              <VideoPlayer
-                videoUrl={result.videoUrl}
-                subtitleUrl={result.subtitleUrl}
-                translatedSubtitleUrl={result.translatedSubtitleUrl}
-              />
+          <>
+            {/* Page header */}
+            <div className="page-header">
+              <div>
+                <h1 className="page-title">
+                  Upload Your Video
+                  <span className="title-icon" aria-hidden="true"> 🎬</span>
+                </h1>
+                <p className="page-sub">Let HydraSubs generate accurate subtitles for you</p>
+              </div>
+              <SunCat className="header-mascot" />
             </div>
 
-            {/* Transcription Results */}
-            <div className="grid grid-2">
-              {/* Original Transcript */}
-              <div className="transcript-card">
-                <h3 className="transcript-title original">
-                  <Subtitles />
-                  Original Transcript ({result.originalLang})
-                </h3>
-                <div className="transcript-content">
-                  <p className="transcript-text">{result.transcript}</p>
-                </div>
-                <a
-                  href={result.subtitleUrl}
-                  download
-                  className="btn-download amber"
-                >
-                  <Download />
-                  Download Subtitles
-                </a>
-              </div>
+            {/* Two-column layout */}
+            <div className="upload-grid">
 
-              {/* Translated Text */}
-              {result.translatedText && result.translatedText !== result.transcript && (
-                <div className="transcript-card">
-                  <h3 className="transcript-title translated">
-                    <Globe />
-                    Translated Text
-                  </h3>
-                  <div className="transcript-content">
-                    <p className="transcript-text">{result.translatedText}</p>
+              {/* LEFT — drop zone + features */}
+              <div className="upload-left">
+                <div className="drop-card">
+                  <SceneBg />
+                  <div
+                    className={`drop-zone ${dragActive ? 'drop-zone--active' : ''} ${file ? 'drop-zone--has-file' : ''}`}
+                    onDragEnter={handleDrag} onDragLeave={handleDrag}
+                    onDragOver={handleDrag}  onDrop={handleDrop}
+                  >
+                    <input
+                      type="file"
+                      accept="video/*"
+                      onChange={handleFileChange}
+                      className="drop-input"
+                    />
+                    <div className="drop-inner">
+                      <div className="drop-cloud-icon">☁</div>
+                      {file ? (
+                        <>
+                          <p className="drop-title" style={{ color: '#a78bfa' }}>{file.name}</p>
+                          <p className="drop-hint" style={{ color: '#22c55e' }}>
+                            <CheckCircle size={14} style={{ display: 'inline', marginRight: 4 }} />
+                            {(file.size / (1024 * 1024)).toFixed(2)} MB — ready
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="drop-title">Drag &amp; drop your video here</p>
+                          <p className="drop-or">or</p>
+                          <button className="btn-browse" type="button">📁 Browse Files</button>
+                          <p className="drop-hint">Supports: MP4, MOV, MKV, AVI, WEBM · Max 5 GB</p>
+                        </>
+                      )}
+                    </div>
                   </div>
-                  {result.translatedSubtitleUrl && (
-                    <a
-                      href={result.translatedSubtitleUrl}
-                      download
-                      className="btn-download emerald"
-                    >
-                      <Download />
-                      Download Translated Subtitles
-                    </a>
-                  )}
                 </div>
-              )}
-            </div>
 
-            {/* Stats */}
-            <div className="stats-card">
-              <div className="stats-grid">
-                <div className="stat-item">
-                  <p>Word Count</p>
-                  <p>{result.wordCount}</p>
+                {/* Why HydraSubs */}
+                <div className="features-section">
+                  <h2 className="features-title">✦ Why HydraSubs?</h2>
+                  <div className="features-grid">
+                    {features.map(f => (
+                      <div key={f.title} className="feature-card">
+                        <div className="feature-icon">{f.icon}</div>
+                        <div className="feature-name">{f.title}</div>
+                        <div className="feature-desc">{f.desc}</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="stat-item">
-                  <p>Original Language</p>
-                  <p>{result.originalLang.toUpperCase()}</p>
-                </div>
-                <div className="stat-item">
-                  <p>Status</p>
-                  <p className="success">✓ Complete</p>
-                </div>
-                <div className="stat-item">
-                  <p>Lesson ID</p>
-                  <p className="truncate">{result.lessonId}</p>
+              </div>
+
+              {/* RIGHT — settings */}
+              <div className="settings-panel">
+                <div className="settings-card">
+                  <h2 className="settings-title">Upload Settings</h2>
+
+                  <div className="field-group">
+                    <label className="field-label">Translate To</label>
+                    <div className="select-wrap">
+                      <select
+                        value={targetLang}
+                        onChange={e => setTargetLang(e.target.value)}
+                        className="hy-select"
+                      >
+                        {languages.map(l => (
+                          <option key={l.code} value={l.code}>{l.name}</option>
+                        ))}
+                      </select>
+                      <ChevronDown size={16} className="select-arrow" />
+                    </div>
+                    <span className="field-hint">Target language for subtitles</span>
+                  </div>
+
+                  {error && (
+                    <div className="alert-error">
+                      <AlertCircle size={16} />
+                      <span>{error}</span>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={handleUpload}
+                    disabled={!file}
+                    className="btn-generate"
+                  >
+                    <Captions size={18} /> Generate Subtitles
+                  </button>
+
+                  <div className="tips-card">
+                    <div className="tips-title">Tips for better results</div>
+                    {['Use high quality audio', 'Clear speech works best', 'Avoid heavy background noise'].map(t => (
+                      <div key={t} className="tip-row">
+                        <CheckCircle size={13} className="tip-check" /> {t}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
-
-            {/* Upload Another */}
-            <button
-              onClick={resetForm}
-              className="btn btn-secondary"
-            >
-              Upload Another Video
-            </button>
-          </div>
+          </>
         )}
-      </div>
+
+      </main>
     </div>
   );
 }

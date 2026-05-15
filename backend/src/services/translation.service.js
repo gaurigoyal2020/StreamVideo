@@ -1,121 +1,78 @@
 import axios from "axios";
+import { logger } from "../utils/logger.js";
 
-/**
- * Convert language codes to proper format
- */
-const convertLangCode = (lang) => {
-  const langMap = {
-    'en': 'en',
-    'es': 'es',
-    'fr': 'fr',
-    'de': 'de',
-    'hi': 'hi',
-    'zh': 'zh',
-    'ja': 'ja',
-    'ko': 'ko',
-    'pt': 'pt',
-    'ru': 'ru',
-    'ar': 'ar',
-    'it': 'it'
-  };
-  return langMap[lang] || lang;
+const LANG_MAP = {
+  en: "en", es: "es", fr: "fr", de: "de",
+  hi: "hi", zh: "zh", ja: "ja", ko: "ko",
+  pt: "pt", ru: "ru", ar: "ar", it: "it",
 };
 
-/**
- * Try LibreTranslate API
- */
-const tryLibreTranslate = async (text, source, target) => {
-  try {
-    console.log(`Translating with LibreTranslate from ${source} to ${target}...`);
-    const response = await axios.post('https://libretranslate.de/translate', {
-      q: text,
-      source: source,
-      target: target,
-      format: 'text'
-    }, {
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      timeout: 10000
-    });
+const normalizeLang = (lang) => LANG_MAP[lang] ?? lang;
+const REQUEST_TIMEOUT = 12_000;
 
-    if (response.data && response.data.translatedText) {
-      console.log("LibreTranslate successful");
-      return response.data.translatedText;
-    }
-  } catch (error) {
-    console.error("LibreTranslate error:", error.message);
-  }
-  return null;
-};
+// ── Individual provider attempts ──────────────────────────────────────────────
 
-/**
- * Try MyMemory API
- */
-const tryMyMemory = async (text, source, target) => {
-  try {
-    console.log(`Fallback to MyMemory translation...`);
-    const langPair = `${source}|${target}`;
-    const response = await axios.get(`https://api.mymemory.translated.net/get`, {
-      params: {
-        q: text.substring(0, 500),
-        langpair: langPair
-      },
-      timeout: 10000
-    });
+async function tryLibreTranslate(text, source, target) {
+  const response = await axios.post(
+    "https://libretranslate.de/translate",
+    { q: text, source, target, format: "text" },
+    { headers: { "Content-Type": "application/json" }, timeout: REQUEST_TIMEOUT }
+  );
+  return response.data?.translatedText ?? null;
+}
 
-    if (response.data && response.data.responseData && response.data.responseData.translatedText) {
-      console.log("MyMemory successful");
-      return response.data.responseData.translatedText;
-    }
-  } catch (error) {
-    console.error("MyMemory error:", error.message);
-  }
-  return null;
-};
+async function tryMyMemory(text, source, target) {
+  const response = await axios.get("https://api.mymemory.translated.net/get", {
+    params: { q: text.substring(0, 500), langpair: `${source}|${target}` },
+    timeout: REQUEST_TIMEOUT,
+  });
+  const result = response.data?.responseData?.translatedText;
+  // MyMemory returns the original text when it fails — treat that as a miss
+  if (!result || result === text) return null;
+  return result;
+}
+
+async function tryLingva(text, source, target) {
+  const response = await axios.get(
+    `https://lingva.ml/api/v1/${source}/${target}/${encodeURIComponent(text.substring(0, 1000))}`,
+    { timeout: REQUEST_TIMEOUT }
+  );
+  return response.data?.translation ?? null;
+}
+
+// ── Public API ────────────────────────────────────────────────────────────────
 
 /**
- * Try Lingva API
- */
-const tryLingva = async (text, source, target) => {
-  try {
-    console.log(`Fallback to Lingva translation...`);
-    const response = await axios.get(
-      `https://lingva.ml/api/v1/${source}/${target}/${encodeURIComponent(text.substring(0, 1000))}`,
-      { timeout: 10000 }
-    );
-
-    if (response.data && response.data.translation) {
-      console.log("Lingva successful");
-      return response.data.translation;
-    }
-  } catch (error) {
-    console.error("Lingva error:", error.message);
-  }
-  return null;
-};
-
-/**
- * Translate text using multiple free translation APIs with fallback
+ * Translate text from sourceLang to targetLang.
+ * Tries providers in order, returns original text if all fail.
  */
 export const translateText = async (text, sourceLang, targetLang) => {
-  if (sourceLang === targetLang || !text.trim()) {
+  const source = normalizeLang(sourceLang);
+  const target = normalizeLang(targetLang);
+
+  if (source === target || !text.trim()) {
+    logger.debug("Translation skipped (same language or empty)");
     return text;
   }
 
-  const source = convertLangCode(sourceLang);
-  const target = convertLangCode(targetLang);
+  const providers = [
+    { name: "LibreTranslate", fn: () => tryLibreTranslate(text, source, target) },
+    { name: "MyMemory",       fn: () => tryMyMemory(text, source, target) },
+    { name: "Lingva",         fn: () => tryLingva(text, source, target) },
+  ];
 
-  // Try services in order
-  let translated = await tryLibreTranslate(text, source, target);
-  if (translated) return translated;
+  for (const { name, fn } of providers) {
+    try {
+      const result = await fn();
+      if (result) {
+        logger.info(`Translation successful via ${name}`, { source, target });
+        return result;
+      }
+    } catch (err) {
+      logger.warn(`${name} translation failed`, { message: err.message });
+    }
+  }
 
-  translated = await tryMyMemory(text, source, target);
-  if (translated) return translated;
-
-  translated = await tryLingva(text, source, target);
-  if (translated) return translated;
-
-  console.log("All translation services failed, returning original text");
+  logger.warn("All translation providers failed — returning original text");
   return text;
 };

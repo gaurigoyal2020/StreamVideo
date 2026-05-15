@@ -2,107 +2,66 @@ import path from "path";
 import { formatTime } from "../utils/time.utils.js";
 import { writeFile } from "../utils/file.utils.js";
 
-/**
- * Group words into subtitle chunks
- */
-const groupWordsIntoChunks = (words) => {
-  const subtitleChunks = [];
-  let currentChunk = {
-    words: [],
-    start: null,
-    end: null
-  };
+const MAX_WORDS_PER_CHUNK = 8;
+
+function groupWordsIntoChunks(words) {
+  const chunks = [];
+  let current = { words: [], start: null, end: null };
 
   words.forEach((word, index) => {
-    if (currentChunk.start === null) {
-      currentChunk.start = word.start;
-    }
+    if (current.start === null) current.start = word.start;
 
-    currentChunk.words.push(word.word);
-    currentChunk.end = word.end;
+    current.words.push(word.word);
+    current.end = word.end;
 
-    const isEndOfSentence = word.word.includes('.') || word.word.includes('!') || word.word.includes('?');
-    const isChunkFull = currentChunk.words.length >= 8;
-    const isLastWord = index === words.length - 1;
+    const endsWithPunctuation =
+      word.word.includes(".") || word.word.includes("!") || word.word.includes("?");
+    const isFull = current.words.length >= MAX_WORDS_PER_CHUNK;
+    const isLast = index === words.length - 1;
 
-    if (isEndOfSentence || isChunkFull || isLastWord) {
-      subtitleChunks.push({ ...currentChunk });
-      currentChunk = {
-        words: [],
-        start: null,
-        end: null
-      };
+    if (endsWithPunctuation || isFull || isLast) {
+      chunks.push({ ...current });
+      current = { words: [], start: null, end: null };
     }
   });
 
-  return subtitleChunks;
-};
+  return chunks;
+}
 
-/**
- * Generate VTT content from subtitle chunks
- */
-const generateVTTContent = (subtitleChunks) => {
-  let vttContent = "WEBVTT\n\n";
-
-  subtitleChunks.forEach((chunk, index) => {
-    const startTime = formatTime(chunk.start);
-    const endTime = formatTime(chunk.end);
-    const text = chunk.words.join(' ');
-
-    vttContent += `${index + 1}\n`;
-    vttContent += `${startTime} --> ${endTime}\n`;
-    vttContent += `${text}\n\n`;
+function buildVTT(chunks, textsFn) {
+  let vtt = "WEBVTT\n\n";
+  chunks.forEach((chunk, i) => {
+    vtt += `${i + 1}\n`;
+    vtt += `${formatTime(chunk.start)} --> ${formatTime(chunk.end)}\n`;
+    vtt += `${textsFn(chunk, i)}\n\n`;
   });
+  return vtt;
+}
 
-  return vttContent;
-};
-
-/**
- * Generate translated VTT content
- */
-const generateTranslatedVTT = (translatedText, subtitleChunks) => {
-  let translatedVttContent = "WEBVTT\n\n";
-  
-  const translatedWords = translatedText.split(' ');
-  const wordsPerChunk = Math.ceil(translatedWords.length / subtitleChunks.length);
-
-  subtitleChunks.forEach((chunk, index) => {
-    const startTime = formatTime(chunk.start);
-    const endTime = formatTime(chunk.end);
-    const startIdx = index * wordsPerChunk;
-    const endIdx = Math.min(startIdx + wordsPerChunk, translatedWords.length);
-    const text = translatedWords.slice(startIdx, endIdx).join(' ');
-
-    translatedVttContent += `${index + 1}\n`;
-    translatedVttContent += `${startTime} --> ${endTime}\n`;
-    translatedVttContent += `${text}\n\n`;
-  });
-
-  return translatedVttContent;
-};
-
-/**
- * Generate WebVTT subtitle files
- */
 export const generateWebVTT = (words, outputPath, translatedText = null) => {
-  if (!words || words.length === 0) {
-    return null;
-  }
+  if (!words?.length) return null;
 
-  const subtitleChunks = groupWordsIntoChunks(words);
-  
-  // Generate original VTT
-  const vttContent = generateVTTContent(subtitleChunks);
-  const vttPath = path.join(outputPath, 'subtitles.vtt');
-  writeFile(vttPath, vttContent);
+  const chunks = groupWordsIntoChunks(words);
 
-  // Generate translated VTT if translation provided
-  if (translatedText) {
-    const translatedVttContent = generateTranslatedVTT(translatedText, subtitleChunks);
-    const translatedVttPath = path.join(outputPath, 'subtitles-translated.vtt');
-    writeFile(translatedVttPath, translatedVttContent);
-    return { original: vttPath, translated: translatedVttPath };
-  }
+  // Original subtitles
+  const originalVtt = buildVTT(chunks, (chunk) => chunk.words.join(" "));
+  const vttPath = path.join(outputPath, "subtitles.vtt");
+  writeFile(vttPath, originalVtt);
 
-  return { original: vttPath };
+  if (!translatedText) return { original: vttPath };
+
+  // Translated subtitles — distribute translated words proportionally
+  const translatedWords = translatedText.split(" ");
+  const wordsPerChunk = Math.ceil(translatedWords.length / chunks.length);
+
+  const translatedVtt = buildVTT(chunks, (_chunk, i) => {
+    const start = i * wordsPerChunk;
+    const end = Math.min(start + wordsPerChunk, translatedWords.length);
+    return translatedWords.slice(start, end).join(" ");
+  });
+
+  const translatedVttPath = path.join(outputPath, "subtitles-translated.vtt");
+  writeFile(translatedVttPath, translatedVtt);
+
+  return { original: vttPath, translated: translatedVttPath };
 };

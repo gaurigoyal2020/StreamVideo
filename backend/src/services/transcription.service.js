@@ -1,53 +1,44 @@
 import axios from "axios";
 import { readFileAsBuffer } from "../utils/file.utils.js";
+import { env } from "../config/env.js";
 
-/**
- * Transcribe audio using Deepgram API
- */
 export const transcribeAudio = async (audioPath) => {
-  const deepgramApiKey = process.env.DEEPGRAM_API_KEY;
-
-  if (!deepgramApiKey) {
-    throw new Error("DEEPGRAM_API_KEY is not set in environment variables");
-  }
+  const audioBuffer = readFileAsBuffer(audioPath);
 
   try {
-    const audioBuffer = readFileAsBuffer(audioPath);
-
     const response = await axios.post(
-      'https://api.deepgram.com/v1/listen',
+      "https://api.deepgram.com/v1/listen",
       audioBuffer,
       {
         headers: {
-          'Authorization': `Token ${deepgramApiKey}`,
-          'Content-Type': 'audio/mp3'
+          Authorization: `Token ${env.deepgramApiKey}`,
+          "Content-Type": "audio/mp3",
         },
         params: {
           smart_format: true,
           punctuate: true,
           detect_language: true,
           diarize: false,
-          utterances: true
-        }
+          utterances: true,
+        },
+        timeout: 10 * 60 * 1000,
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity,
       }
     );
 
-    const alt = response.data.results.channels[0].alternatives[0];
-    const transcript = alt.transcript || "";
-    const words = alt.words || [];
-    const detectedLang = response.data.results.channels[0].detected_language || "en";
-
-    console.log("Transcript:", transcript);
-    console.log("Detected Language:", detectedLang);
-    console.log("Words with timing:", words.length);
+    const channel = response.data?.results?.channels?.[0];
+    const alt = channel?.alternatives?.[0];
+    if (!alt) throw new Error("Deepgram returned no transcription results");
 
     return {
-      transcript,
-      words,
-      detectedLang
+      transcript: alt.transcript ?? "",
+      words: alt.words ?? [],
+      detectedLang: channel?.detected_language ?? "en",
     };
-  } catch (error) {
-    console.error("Deepgram transcription error:", error.message);
-    throw new Error(`Failed to transcribe audio: ${error.message}`);
+  } catch (err) {
+    if (err.response?.status === 401)
+      throw new Error("Deepgram authentication failed. Check your DEEPGRAM_API_KEY.");
+    throw new Error(`Transcription failed: ${err.message}`);
   }
 };

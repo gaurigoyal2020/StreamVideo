@@ -2,16 +2,20 @@ import { convertToHLS, extractAudio } from "../services/ffmpeg.service.js";
 import { transcribeAudio } from "../services/transcription.service.js";
 import { translateText } from "../services/translation.service.js";
 import { generateWebVTT } from "../services/subtitle.service.js";
-import { generateLessonId, ensureDirectoryExists } from "../utils/file.utils.js";
+import {
+  generateLessonId,
+  ensureDirectoryExists,
+  deleteFile,
+} from "../utils/file.utils.js";
+import { logger } from "../utils/logger.js";
+import { env } from "../config/env.js";
 
-/**
- * Upload video, convert to HLS, transcribe, translate, and generate subtitles
- */
 export const uploadVideo = async (req, res, next) => {
+  const uploadedFilePath = req.file?.path ?? null;
+
   try {
-    // Validate file upload
     if (!req.file) {
-      return res.status(400).json({ error: "No file uploaded" });
+      return res.status(400).json({ success: false, error: "No file uploaded" });
     }
 
     const lessonId = generateLessonId();
@@ -20,49 +24,40 @@ export const uploadVideo = async (req, res, next) => {
     const hlsPath = `${outputPath}/index.m3u8`;
     const audioPath = `${outputPath}/audio.mp3`;
 
-    console.log("Processing video:", videoPath);
-    console.log("Lesson ID:", lessonId);
+    logger.info("Processing video", { lessonId, originalName: req.file.originalname });
 
-    // Create output directory
     ensureDirectoryExists(outputPath);
 
-    // Step 1: Convert video to HLS
+    // Step 1 — HLS
     await convertToHLS(videoPath, outputPath, hlsPath);
 
-    // Step 2: Extract audio
+    // Step 2 — Audio extraction
     await extractAudio(videoPath, audioPath);
 
-    // Step 3: Transcribe audio
+    // Step 3 — Transcription
     const { transcript, words, detectedLang } = await transcribeAudio(audioPath);
 
-    // Step 4: Translate transcript
-    const userTargetLang = req.body.targetLang || "en";
-    const translatedText = await translateText(transcript, detectedLang, userTargetLang);
+    // Step 4 — Translation
+    const targetLang = req.body.targetLang ?? "en";
+    const translatedText = await translateText(transcript, detectedLang, targetLang);
 
-    // Print transcript and translation
-    console.log("\n" + "=".repeat(80));
-    console.log("ORIGINAL TRANSCRIPT (" + detectedLang + "):");
-    console.log("=".repeat(80));
-    console.log(transcript);
-    console.log("\n" + "=".repeat(80));
-    console.log("TRANSLATED TEXT (" + userTargetLang + "):");
-    console.log("=".repeat(80));
-    console.log(translatedText);
-    console.log("=".repeat(80) + "\n");
+    logger.info("Transcript", { detectedLang, chars: transcript.length });
+    logger.debug("Translated", { targetLang, chars: translatedText.length });
 
-    // Step 5: Generate subtitle files
-    const subtitlePaths = generateWebVTT(words, outputPath, translatedText);
+    // Step 5 — Subtitles
+    generateWebVTT(words, outputPath, translatedText);
 
-    // Step 6: Build response URLs
-    const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 8000}`;
-    const videoUrl = `${baseUrl}/uploads/courses/${lessonId}/index.m3u8`;
-    const subtitleUrl = `${baseUrl}/uploads/courses/${lessonId}/subtitles.vtt`;
-    const translatedSubtitleUrl = translatedText !== transcript
-      ? `${baseUrl}/uploads/courses/${lessonId}/subtitles-translated.vtt`
-      : null;
+    // Step 6 — Cleanup original upload (no longer needed)
+    deleteFile(uploadedFilePath);
 
-    // Send success response
-    res.json({
+    // Step 7 — Build response URLs from env.baseUrl (no hardcoding)
+    const base = `${env.baseUrl}/uploads/courses/${lessonId}`;
+    const videoUrl = `${base}/index.m3u8`;
+    const subtitleUrl = `${base}/subtitles.vtt`;
+    const translatedSubtitleUrl =
+      translatedText !== transcript ? `${base}/subtitles-translated.vtt` : null;
+
+    return res.status(201).json({
       success: true,
       message: "Video processed successfully",
       data: {
@@ -73,13 +68,13 @@ export const uploadVideo = async (req, res, next) => {
         transcript,
         translatedText,
         originalLang: detectedLang,
-        targetLang: userTargetLang,
-        wordCount: words.length
-      }
+        targetLang,
+        wordCount: words.length,
+      },
     });
-
-  } catch (error) {
-    console.error("Upload video error:", error);
-    next(error);
+  } catch (err) {
+    // Always clean up the raw upload on error
+    if (uploadedFilePath) deleteFile(uploadedFilePath);
+    next(err);
   }
 };
