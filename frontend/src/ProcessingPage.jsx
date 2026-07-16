@@ -1,34 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles, HelpCircle, X, Monitor } from 'lucide-react';
+import Mascot from './Mascot';
 import './ProcessingPage.css';
-
-/* ─── Pixel Mascots ──────────────────────────────────────────────── */
-const SunCat = ({ size = 56 }) => (
-  <svg width={size} height={size} viewBox="0 0 8 8" style={{ imageRendering: 'pixelated' }} xmlns="http://www.w3.org/2000/svg">
-    <rect x="2" y="0" width="4" height="1" fill="#f59e0b"/>
-    <rect x="1" y="1" width="6" height="1" fill="#f59e0b"/>
-    <rect x="1" y="2" width="6" height="3" fill="#fbbf24"/>
-    <rect x="2" y="2" width="1" height="1" fill="#1e1040"/>
-    <rect x="5" y="2" width="1" height="1" fill="#1e1040"/>
-    <rect x="3" y="4" width="2" height="1" fill="#f97316"/>
-    <rect x="1" y="5" width="6" height="2" fill="#f59e0b"/>
-    <rect x="0" y="3" width="1" height="2" fill="#fde68a"/>
-    <rect x="7" y="3" width="1" height="2" fill="#fde68a"/>
-  </svg>
-);
-
-const MoonCat = ({ size = 48 }) => (
-  <svg width={size} height={size} viewBox="0 0 8 8" style={{ imageRendering: 'pixelated' }} xmlns="http://www.w3.org/2000/svg">
-    <rect x="2" y="0" width="4" height="1" fill="#1e1040"/>
-    <rect x="1" y="1" width="6" height="5" fill="#2d1b69"/>
-    <rect x="2" y="2" width="1" height="1" fill="#c084fc"/>
-    <rect x="5" y="2" width="1" height="1" fill="#c084fc"/>
-    <rect x="3" y="4" width="2" height="1" fill="#1e1040"/>
-    <rect x="0" y="5" width="8" height="2" fill="#1e1040"/>
-    <rect x="0" y="2" width="1" height="2" fill="#2d1b69"/>
-    <rect x="7" y="2" width="1" height="2" fill="#2d1b69"/>
-  </svg>
-);
 
 /* ─── Helpers ────────────────────────────────────────────────────── */
 const fmtSec = (s) => {
@@ -92,6 +65,7 @@ const ProcessingPage = ({ progress = 0, file, onBackground }) => {
   const speed           = elapsed > 0 ? (progress / elapsed * 1.8).toFixed(1) : '—';
   const fileName        = file?.name?.replace(/\.[^.]+$/, '') || 'My Awesome Video';
   const fileSizeMB      = file?.size ? (file.size / (1024 * 1024)).toFixed(2) + ' MB' : '—';
+  const isDone           = progress >= 100;
 
   const activity = ACTIVITY_TEMPLATES.map(fn => fn(Math.max(elapsed, 60)));
 
@@ -115,7 +89,7 @@ const ProcessingPage = ({ progress = 0, file, onBackground }) => {
         </div>
         <div className="pp-header-right">
           <button className="pp-btn-how"><HelpCircle size={14} /> How it works?</button>
-          <SunCat size={52} />
+          <Mascot size={52} state={isDone ? 'done' : 'active'} />
         </div>
       </div>
 
@@ -134,14 +108,10 @@ const ProcessingPage = ({ progress = 0, file, onBackground }) => {
               <div className="pp-scene-star pp-s1">✦</div>
               <div className="pp-scene-star pp-s2">·</div>
               <div className="pp-scene-star pp-s3">✦</div>
-              <div className="pp-scene-lantern pp-l1">🏮</div>
-              <div className="pp-scene-lantern pp-l2">🏮</div>
               <div className="pp-hydrangea pp-h1">❋</div>
               <div className="pp-hydrangea pp-h2">❋</div>
               <div className="pp-hydrangea pp-h3">❋</div>
-              <div className="pp-scene-suncat"><SunCat size={64} /></div>
-              <div className="pp-scene-mooncat"><MoonCat size={72} /></div>
-              <div className="pp-scene-laptop">💻</div>
+              <div className="pp-scene-suncat"><Mascot size={68} state={isDone ? 'done' : 'active'} /></div>
             </div>
 
             {/* Status */}
@@ -279,8 +249,7 @@ const ProcessingPage = ({ progress = 0, file, onBackground }) => {
               ))}
             </div>
             <div className="pp-activity-mascots">
-              <SunCat size={36} />
-              <MoonCat size={32} />
+              <Mascot size={36} state={isDone ? 'done' : 'active'} />
               <div className="pp-speech">…</div>
             </div>
           </div>

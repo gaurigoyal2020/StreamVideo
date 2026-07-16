@@ -8,37 +8,8 @@ import {
 } from 'lucide-react';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
+import Mascot from './Mascot';
 import './ResultsPage.css';
-
-/* ─── Pixel Mascots (same as App.jsx) ────────────────────────────── */
-const SunCat = ({ size = 56 }) => (
-  <svg width={size} height={size} viewBox="0 0 8 8" style={{ imageRendering: 'pixelated' }} xmlns="http://www.w3.org/2000/svg">
-    <rect x="2" y="0" width="4" height="1" fill="#f59e0b"/>
-    <rect x="1" y="1" width="6" height="1" fill="#f59e0b"/>
-    <rect x="1" y="2" width="6" height="3" fill="#fbbf24"/>
-    <rect x="2" y="2" width="1" height="1" fill="#1e1040"/>
-    <rect x="5" y="2" width="1" height="1" fill="#1e1040"/>
-    <rect x="3" y="4" width="2" height="1" fill="#f97316"/>
-    <rect x="1" y="5" width="6" height="2" fill="#f59e0b"/>
-    <rect x="0" y="3" width="1" height="2" fill="#fde68a"/>
-    <rect x="7" y="3" width="1" height="2" fill="#fde68a"/>
-    <rect x="1" y="1" width="1" height="1" fill="#fbbf24"/>
-    <rect x="6" y="1" width="1" height="1" fill="#fbbf24"/>
-  </svg>
-);
-
-const MoonCat = ({ size = 48 }) => (
-  <svg width={size} height={size} viewBox="0 0 8 8" style={{ imageRendering: 'pixelated' }} xmlns="http://www.w3.org/2000/svg">
-    <rect x="2" y="0" width="4" height="1" fill="#1e1040"/>
-    <rect x="1" y="1" width="6" height="5" fill="#2d1b69"/>
-    <rect x="2" y="2" width="1" height="1" fill="#c084fc"/>
-    <rect x="5" y="2" width="1" height="1" fill="#c084fc"/>
-    <rect x="3" y="4" width="2" height="1" fill="#1e1040"/>
-    <rect x="0" y="5" width="8" height="2" fill="#1e1040"/>
-    <rect x="0" y="2" width="1" height="2" fill="#2d1b69"/>
-    <rect x="7" y="2" width="1" height="2" fill="#2d1b69"/>
-  </svg>
-);
 
 /* ─── Video Player ───────────────────────────────────────────────── */
 const VideoPlayer = ({ videoUrl, subtitleUrl, translatedSubtitleUrl }) => {
@@ -284,8 +255,7 @@ const ResultsPage = ({ result, file, targetLang, onReset }) => {
               </p>
             </div>
             <div className="rp-aisummary-mascots">
-              <SunCat size={52} />
-              <MoonCat size={44} />
+              <Mascot size={52} state="done" />
               <div className="rp-campfire">🔥</div>
             </div>
           </div>
@@ -357,7 +327,7 @@ const ResultsPage = ({ result, file, targetLang, onReset }) => {
                 <span className="rp-lang-conf">Confidence: 98.6%</span>
               </div>
               <div className="rp-lang-mascot">
-                <MoonCat size={40} />
+                <Mascot size={40} state="done" />
                 <div className="rp-speech-bubble">✓</div>
               </div>
             </div>
@@ -368,8 +338,7 @@ const ResultsPage = ({ result, file, targetLang, onReset }) => {
             <div className="rp-card-title">
               <span className="rp-card-icon">🌐</span> Translations
               <div className="rp-trans-mascots">
-                <SunCat size={32} />
-                <MoonCat size={28} />
+                <Mascot size={32} state="done" />
               </div>
             </div>
 

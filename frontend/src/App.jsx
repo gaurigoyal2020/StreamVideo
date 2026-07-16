@@ -6,61 +6,9 @@ import {
 } from 'lucide-react';
 import ResultsPage from './ResultsPage';
 import ProcessingPage from './ProcessingPage';
+import Mascot from './Mascot';
+import { uploadVideo } from './api';
 import './index.css';
-
-/* ─── Pixel Sun Cat ──────────────────────────────────────────────── */
-const SunCat = ({ className = '' }) => (
-  <svg
-    className={className}
-    width="56" height="56"
-    viewBox="0 0 21 16"
-    style={{ imageRendering: 'pixelated' }}
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    {/* Ears */}
-    <rect x="4" y="0" width="2" height="1" fill="#e8821a"/>
-    <rect x="3" y="1" width="3" height="1" fill="#e8821a"/>
-    <rect x="4" y="1" width="1" height="1" fill="#f5a84b"/>
-    <rect x="15" y="0" width="2" height="1" fill="#e8821a"/>
-    <rect x="15" y="1" width="3" height="1" fill="#e8821a"/>
-    <rect x="16" y="1" width="1" height="1" fill="#f5a84b"/>
-    {/* Head */}
-    <rect x="3" y="2" width="15" height="1" fill="#e8821a"/>
-    <rect x="2" y="3" width="17" height="2" fill="#e8821a"/>
-    {/* Tabby stripes */}
-    <rect x="8"  y="2" width="1" height="2" fill="#c45f0a"/>
-    <rect x="10" y="2" width="1" height="2" fill="#c45f0a"/>
-    <rect x="12" y="2" width="1" height="2" fill="#c45f0a"/>
-    {/* Eyes */}
-    <rect x="1" y="5" width="19" height="3" fill="#e8821a"/>
-    <rect x="3" y="5" width="5"  height="3" fill="#ffffff"/>
-    <rect x="13" y="5" width="5" height="3" fill="#ffffff"/>
-    <rect x="5"  y="5" width="1" height="3" fill="#1a2e3d"/>
-    <rect x="15" y="5" width="1" height="3" fill="#1a2e3d"/>
-    {/* Below eyes / nose */}
-    <rect x="2" y="8" width="17" height="1" fill="#e8821a"/>
-    <rect x="2" y="9" width="17" height="1" fill="#e8821a"/>
-    <rect x="9" y="9" width="3"  height="1" fill="#d4622a"/>
-    {/* Mouth */}
-    <rect x="2"  y="10" width="17" height="1" fill="#e8821a"/>
-    <rect x="6"  y="10" width="1"  height="1" fill="#ffe4b5"/>
-    <rect x="7"  y="10" width="7"  height="1" fill="#1a2e3d"/>
-    <rect x="14" y="10" width="1"  height="1" fill="#ffe4b5"/>
-    <rect x="3"  y="11" width="15" height="1" fill="#e8821a"/>
-    <rect x="7"  y="11" width="1"  height="1" fill="#ffe4b5"/>
-    <rect x="8"  y="11" width="5"  height="1" fill="#1a2e3d"/>
-    <rect x="13" y="11" width="1"  height="1" fill="#ffe4b5"/>
-    <rect x="4"  y="12" width="13" height="1" fill="#e8821a"/>
-    <rect x="8"  y="12" width="1"  height="1" fill="#ffe4b5"/>
-    <rect x="9"  y="12" width="3"  height="1" fill="#1a2e3d"/>
-    <rect x="12" y="12" width="1"  height="1" fill="#ffe4b5"/>
-    <rect x="5"  y="13" width="11" height="1" fill="#e8821a"/>
-    <rect x="10" y="13" width="1"  height="1" fill="#ffe4b5"/>
-    {/* Whiskers */}
-    <rect x="0"  y="7" width="2" height="1" fill="#f5a84b"/>
-    <rect x="19" y="7" width="2" height="1" fill="#f5a84b"/>
-  </svg>
-);
 
 /* ─── Scene Background ───────────────────────────────────────────── */
 const SceneBg = () => (
@@ -72,7 +20,7 @@ const SceneBg = () => (
     <div className="scene-hydrangea h1">❋</div>
     <div className="scene-hydrangea h2">❋</div>
     <div className="scene-hydrangea h3">❋</div>
-    <div className="scene-mascot-left"><SunCat /></div>
+    <div className="scene-mascot-left"><Mascot size={56} state="idle" /></div>
   </div>
 );
 
@@ -89,7 +37,7 @@ const navItems = [
 const Sidebar = () => (
   <aside className="sidebar">
     <div className="sidebar-logo">
-      <SunCat />
+      <Mascot size={32} state="idle" />
       <span className="logo-text">HydraSubs</span>
     </div>
     <nav className="sidebar-nav">
@@ -161,34 +109,35 @@ function App() {
     else setError('Please upload a valid video file');
   };
 
-  /* ── Upload ── */
+  /* ── Upload ──
+     Uses the shared uploadVideo() helper from api.js, which:
+       - reads the backend URL from VITE_API_URL (no hardcoding)
+       - reports real upload progress via XHR (0-70%), leaving
+         70-100% for server-side processing
+  */
   const handleUpload = async () => {
     if (!file) { setError('Please select a video file'); return; }
 
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('targetLang', targetLang);
-
     setUploading(true); setError(null); setProgress(0);
 
-    const interval = setInterval(() => {
-      setProgress(p => {
-        if (p >= 90) { clearInterval(interval); return 90; }
-        return p + 10;
-      });
-    }, 500);
+    // Simulate the server-processing tail (70 -> 99%) while we wait
+    // for the response, since the backend doesn't stream progress yet.
+    const tailInterval = setInterval(() => {
+      setProgress((p) => (p >= 99 ? 99 : p + 1));
+    }, 600);
 
     try {
-      // AFTER
-      const res = await fetch('http://localhost:8000/api/upload', { method: 'POST', body: formData });
-      clearInterval(interval); setProgress(100);
-      if (!res.ok) throw new Error('Upload failed');
-      const json = await res.json();
+      const json = await uploadVideo(file, targetLang, (pct) => {
+        // XHR progress only covers the upload phase (0-70%)
+        setProgress((prev) => Math.max(prev, pct));
+      });
+      clearInterval(tailInterval);
+      setProgress(100);
       setResult(json.data);
       setTimeout(() => setUploading(false), 500);
-    } catch {
-      clearInterval(interval);
-      setError('Failed to process video. Please try again.');
+    } catch (err) {
+      clearInterval(tailInterval);
+      setError(err.message || 'Failed to process video. Please try again.');
       setUploading(false);
       setProgress(0);
     }
@@ -236,7 +185,7 @@ function App() {
                 </h1>
                 <p className="page-sub">Let HydraSubs generate accurate subtitles for you</p>
               </div>
-              <SunCat className="header-mascot" />
+              <Mascot size={56} state="idle" className="header-mascot" />
             </div>
 
             {/* Two-column layout */}
