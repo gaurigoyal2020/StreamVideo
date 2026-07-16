@@ -375,18 +375,6 @@
   flex-shrink: 0;
   position: relative;
 }
-.rp-campfire {
-  font-size: 1.4rem;
-  position: absolute;
-  bottom: -4px; left: 50%;
-  transform: translateX(-50%);
-  animation: flicker 1.2s ease-in-out infinite;
-}
-@keyframes flicker {
-  0%,100% { transform: translateX(-50%) scale(1); }
-  50%      { transform: translateX(-50%) scale(1.1); filter: brightness(1.2); }
-}
-
 /* ── Stat Cards ──────────────────────────────────────────────────── */
 .rp-stat-grid {
   display: grid;
@@ -457,7 +445,6 @@
   background: linear-gradient(135deg, #1a0d40, #2d1b69);
   border: 1px solid var(--purple-border);
   display: flex; align-items: center; justify-content: center;
-  font-size: 1.6rem;
   flex-shrink: 0;
 }
 .rp-project-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }

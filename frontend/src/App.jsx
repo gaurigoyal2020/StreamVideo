@@ -13,7 +13,7 @@ import './index.css';
 /* ─── Scene Background ───────────────────────────────────────────── */
 const SceneBg = () => (
   <div className="scene-bg" aria-hidden="true">
-    <div className="scene-moon">🌙</div>
+    <div className="scene-sparkle">✦</div>
     <div className="scene-star s1">✦</div>
     <div className="scene-star s2">✦</div>
     <div className="scene-star s3">·</div>

@@ -4,7 +4,7 @@ import {
   Settings, Plus, ChevronRight, MoreHorizontal,
   AlignLeft, Captions, Sparkles, Globe, Clock,
   CheckCircle, BarChart2, Languages, SlidersHorizontal,
-  Maximize2, Volume2, SkipBack, SkipForward
+  Maximize2, Volume2, SkipBack, SkipForward, Video
 } from 'lucide-react';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
@@ -256,7 +256,6 @@ const ResultsPage = ({ result, file, targetLang, onReset }) => {
             </div>
             <div className="rp-aisummary-mascots">
               <Mascot size={52} state="done" />
-              <div className="rp-campfire">🔥</div>
             </div>
           </div>
 
@@ -293,7 +292,7 @@ const ResultsPage = ({ result, file, targetLang, onReset }) => {
             </div>
             <div className="rp-project-thumb">
               <div className="rp-thumb-placeholder">
-                <span>🌙</span>
+                <Video size={26} color="#c4b5fd" />
               </div>
               <div className="rp-project-info">
                 <div className="rp-project-name">

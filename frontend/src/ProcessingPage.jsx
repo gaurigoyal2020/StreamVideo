@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Sparkles, HelpCircle, X, Monitor } from 'lucide-react';
+import { Sparkles, HelpCircle, X, Monitor, Video } from 'lucide-react';
 import Mascot from './Mascot';
 import './ProcessingPage.css';
 
@@ -104,7 +104,7 @@ const ProcessingPage = ({ progress = 0, file, onBackground }) => {
 
             {/* Scene */}
             <div className="pp-scene" aria-hidden="true">
-              <div className="pp-scene-moon">🌙</div>
+              <div className="pp-scene-sparkle">✦</div>
               <div className="pp-scene-star pp-s1">✦</div>
               <div className="pp-scene-star pp-s2">·</div>
               <div className="pp-scene-star pp-s3">✦</div>
@@ -199,7 +199,7 @@ const ProcessingPage = ({ progress = 0, file, onBackground }) => {
           <div className="pp-card">
             <div className="pp-card-title"><span className="pp-card-icon">🎬</span> Project Details</div>
             <div className="pp-proj-thumb">
-              <div className="pp-thumb-bg">🌙</div>
+              <Video size={30} className="pp-thumb-bg" color="#c4b5fd" />
             </div>
             <div className="pp-proj-name">{fileName} <span className="pp-proj-edit">✏</span></div>
             {[
