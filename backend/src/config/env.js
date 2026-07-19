@@ -27,6 +27,7 @@ export const env = {
       .split(",").map((s) => s.trim());
   },
   get deepgramApiKey() { return process.env.DEEPGRAM_API_KEY ?? ""; },
+  get deeplApiKey() { return process.env.DEEPL_API_KEY ?? ""; },
   get baseUrl() { return process.env.BASE_URL ?? `http://localhost:${process.env.PORT ?? "8000"}`; },
   get maxFileSizeMb() { return parseInt(process.env.MAX_FILE_SIZE_MB ?? "500", 10); },
 };

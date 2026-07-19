@@ -1,4 +1,4 @@
-import { convertToHLS, extractAudio } from "../services/ffmpeg.service.js";
+import { processVideo } from "../services/ffmpeg.service.js";
 import { transcribeAudio } from "../services/transcription.service.js";
 import { translateText } from "../services/translation.service.js";
 import { generateWebVTT } from "../services/subtitle.service.js";
@@ -28,29 +28,26 @@ export const uploadVideo = async (req, res, next) => {
 
     ensureDirectoryExists(outputPath);
 
-    // Step 1 — HLS
-    await convertToHLS(videoPath, outputPath, hlsPath);
+    // Step 1 — HLS conversion + audio extraction (single ffmpeg pass)
+    await processVideo(videoPath, outputPath, hlsPath, audioPath);
 
-    // Step 2 — Audio extraction
-    await extractAudio(videoPath, audioPath);
-
-    // Step 3 — Transcription
+    // Step 2 — Transcription
     const { transcript, words, detectedLang } = await transcribeAudio(audioPath);
 
-    // Step 4 — Translation
+    // Step 3 — Translation
     const targetLang = req.body.targetLang ?? "en";
     const translatedText = await translateText(transcript, detectedLang, targetLang);
 
     logger.info("Transcript", { detectedLang, chars: transcript.length });
     logger.debug("Translated", { targetLang, chars: translatedText.length });
 
-    // Step 5 — Subtitles
+    // Step 4 — Subtitles
     generateWebVTT(words, outputPath, translatedText);
 
-    // Step 6 — Cleanup original upload (no longer needed)
+    // Step 5 — Cleanup original upload (no longer needed)
     deleteFile(uploadedFilePath);
 
-    // Step 7 — Build response URLs from env.baseUrl (no hardcoding)
+    // Step 6 — Build response URLs from env.baseUrl (no hardcoding)
     const base = `${env.baseUrl}/uploads/courses/${lessonId}`;
     const videoUrl = `${base}/index.m3u8`;
     const subtitleUrl = `${base}/subtitles.vtt`;
