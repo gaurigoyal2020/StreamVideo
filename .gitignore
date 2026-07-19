@@ -2,4 +2,5 @@ node_modules/
 .env
 dist/
 uploads/
-notes.txt
+*.txt
+index.js.backup

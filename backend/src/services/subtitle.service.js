@@ -4,7 +4,7 @@ import { writeFile } from "../utils/file.utils.js";
 
 const MAX_WORDS_PER_CHUNK = 8;
 
-function groupWordsIntoChunks(words) {
+export function groupWordsIntoChunks(words) {
   const chunks = [];
   let current = { words: [], start: null, end: null };
 
@@ -26,6 +26,28 @@ function groupWordsIntoChunks(words) {
   });
 
   return chunks;
+}
+
+// Translation has no timing of its own — MyMemory/DeepL just return text,
+// with no idea when each word was spoken. So translated subtitle timing is
+// an APPROXIMATION: we take the real timing chunks from the original
+// (Deepgram-timed) words, and spread the translated text proportionally
+// across those same time slots. This is the one place that logic lives —
+// both the .vtt file and the API response for the frontend table use it,
+// so they can never disagree with each other.
+export function buildTranslatedChunks(chunks, translatedText) {
+  const translatedWords = translatedText.split(" ");
+  const wordsPerChunk = Math.ceil(translatedWords.length / chunks.length);
+
+  return chunks.map((chunk, i) => {
+    const start = i * wordsPerChunk;
+    const end = Math.min(start + wordsPerChunk, translatedWords.length);
+    return {
+      start: chunk.start,
+      end: chunk.end,
+      text: translatedWords.slice(start, end).join(" "),
+    };
+  });
 }
 
 function buildVTT(chunks, textsFn) {
@@ -50,15 +72,9 @@ export const generateWebVTT = (words, outputPath, translatedText = null) => {
 
   if (!translatedText) return { original: vttPath };
 
-  // Translated subtitles — distribute translated words proportionally
-  const translatedWords = translatedText.split(" ");
-  const wordsPerChunk = Math.ceil(translatedWords.length / chunks.length);
-
-  const translatedVtt = buildVTT(chunks, (_chunk, i) => {
-    const start = i * wordsPerChunk;
-    const end = Math.min(start + wordsPerChunk, translatedWords.length);
-    return translatedWords.slice(start, end).join(" ");
-  });
+  // Translated subtitles — same distribution logic used for the API response
+  const translatedChunks = buildTranslatedChunks(chunks, translatedText);
+  const translatedVtt = buildVTT(chunks, (_chunk, i) => translatedChunks[i].text);
 
   const translatedVttPath = path.join(outputPath, "subtitles-translated.vtt");
   writeFile(translatedVttPath, translatedVtt);

@@ -56,20 +56,19 @@ const fmtTime = (sec) => {
   return `${h}:${m}:${s},${ms}`;
 };
 
-const parseSubtitles = (transcript) => {
-  if (!transcript) return [];
-  const raw = transcript.match(/[^.!?]+[.!?]+/g) || transcript.split('\n').filter(Boolean);
-  return raw.slice(0, 30).map((text, i) => {
-    const avg = 3 + Math.random() * 3;
-    const start = raw.slice(0, i).reduce((a, _, j) => a + 3 + (j % 3), 0);
-    return {
-      id: i + 1,
-      start: fmtTime(start),
-      end: fmtTime(start + avg),
-      text: text.trim(),
-      duration: `${avg.toFixed(1)}s`,
-    };
-  });
+// Uses the REAL timestamped cues the backend sends (built from Deepgram's
+// actual word-level timing) instead of guessing at durations. If a result
+// doesn't have `subtitles` yet (e.g. an older cached response), falls back
+// to an empty list rather than fabricating fake timing.
+const parseSubtitles = (cues) => {
+  if (!cues?.length) return [];
+  return cues.map((cue, i) => ({
+    id: i + 1,
+    start: fmtTime(cue.start),
+    end: fmtTime(cue.end),
+    text: cue.text.trim(),
+    duration: `${(cue.end - cue.start).toFixed(1)}s`,
+  }));
 };
 
 const FLAG = { ja: '🇯🇵', ko: '🇰🇷', es: '🇪🇸', fr: '🇫🇷', de: '🇩🇪', zh: '🇨🇳', hi: '🇮🇳', pt: '🇧🇷', ru: '🇷🇺', ar: '🇸🇦' };
@@ -81,7 +80,11 @@ const ResultsPage = ({ result, file, targetLang, onReset }) => {
   const [exportFmt, setExportFmt]   = useState('SRT');
   const [searchQ, setSearchQ]       = useState('');
 
-  const subtitles  = parseSubtitles(result?.transcript);
+  // Show the TRANSLATED cues when a translation happened — otherwise this
+  // tab is stuck showing the original language no matter what target
+  // language was picked, regardless of the "Subtitles" label implying it
+  // should reflect the user's chosen language.
+  const subtitles  = parseSubtitles(result?.translatedSubtitles || result?.subtitles);
   const filtered   = subtitles.filter(s => s.text.toLowerCase().includes(searchQ.toLowerCase()));
   const langCode   = result?.originalLang || 'en';
   const targetCode = targetLang || result?.targetLang || 'en';
