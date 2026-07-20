@@ -1,5 +1,5 @@
 {
-  "name": "lalaland",
+  "name": "BloomLore Backend",
   "version": "1.0.0",
   "description": "Video streaming backend with transcription and translation",
   "main": "src/index.js",

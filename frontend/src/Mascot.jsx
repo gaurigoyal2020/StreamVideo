@@ -1,7 +1,7 @@
 import React from 'react';
 
 /* ─────────────────────────────────────────────────────────────────
-   Bloom — the HydraSubs mascot
+   Bloom — the BloomLore mascot
    A hydrangea flower head built from individual four-petal florets
    (the way a real hydrangea actually looks — a dense cluster of many
    small blossoms, not one giant flower). No face: the bud closes and
@@ -148,7 +148,13 @@ const Mascot = ({ size = 56, state = 'idle', className = '' }) => {
       aria-label={`Bloom the mascot, ${state}`}
     >
       <line x1="32" y1="42" x2="32" y2="60" stroke="#2f7a3d" strokeWidth="3.5" strokeLinecap="round" />
+      {/* Two leaves, mirrored left/right around x=32 (the stem's x-position
+          and the SVG's true horizontal center). Previously there was only
+          the right-hand leaf, which pulled the visible artwork's center of
+          mass to the right — the wrapping div was correctly centered by
+          CSS, but the asymmetric drawing inside it still looked off-center. */}
       <path d="M 32 50 Q 44 46 49 54 Q 38 57 32 50" fill="#3d9b4d" />
+      <path d="M 32 50 Q 20 46 15 54 Q 26 57 32 50" fill="#3d9b4d" />
 
       <g transform="translate(32,28)">
         <animateTransform

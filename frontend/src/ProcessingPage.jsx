@@ -27,18 +27,10 @@ const PIPELINE_STEPS = [
 ];
 
 const FACTS = [
-  'HydraSubs uses advanced AI to deliver highly accurate subtitles in over 100 languages.',
+  'BloomLore uses advanced AI to deliver highly accurate subtitles in over 100 languages.',
   'Our AI can detect up to 97 languages automatically — no manual selection needed.',
   'Subtitles are synced frame-by-frame for perfect timing every time.',
   'You can edit, restyle, and export subtitles in SRT, VTT, ASS, and more.',
-];
-
-const ACTIVITY_TEMPLATES = [
-  (t) => ({ ts: fmtSec(t),       msg: 'Speech recognition in progress...' }),
-  (t) => ({ ts: fmtSec(t - 14),  msg: 'Audio chunks processed' }),
-  (t) => ({ ts: fmtSec(t - 26),  msg: 'Language detected: English' }),
-  (t) => ({ ts: fmtSec(t - 39),  msg: 'Initializing transcription engine' }),
-  (t) => ({ ts: fmtSec(t - 54),  msg: 'Upload verified, starting process' }),
 ];
 
 const getCurrentStep = (p) => STEPS.findLast(s => p >= s.threshold) || STEPS[0];
@@ -67,8 +59,6 @@ const ProcessingPage = ({ progress = 0, file, onBackground }) => {
   const fileSizeMB      = file?.size ? (file.size / (1024 * 1024)).toFixed(2) + ' MB' : '—';
   const isDone           = progress >= 100;
 
-  const activity = ACTIVITY_TEMPLATES.map(fn => fn(Math.max(elapsed, 60)));
-
   return (
     <div className="pp-root">
 
@@ -85,7 +75,7 @@ const ProcessingPage = ({ progress = 0, file, onBackground }) => {
       <div className="pp-page-header">
         <div>
           <h1 className="pp-title">Processing Your Video <Sparkles size={18} className="pp-spark" /></h1>
-          <p className="pp-sub">Hang tight! HydraSubs is working its magic.</p>
+          <p className="pp-sub">Hang tight! BloomLore is working its magic.</p>
         </div>
         <div className="pp-header-right">
           <button className="pp-btn-how"><HelpCircle size={14} /> How it works?</button>
@@ -215,8 +205,9 @@ const ProcessingPage = ({ progress = 0, file, onBackground }) => {
             ))}
           </div>
 
-          {/* Processing Steps */}
-          <div className="pp-card">
+          {/* Processing Steps — now expands to fill the space the removed
+              Live Activity card used to take up (see pp-steps-card in CSS) */}
+          <div className="pp-card pp-steps-card">
             <div className="pp-card-title"><span className="pp-card-icon">⚙️</span> Processing Steps</div>
             <div className="pp-steps-list">
               {PIPELINE_STEPS.map((s, i) => {
@@ -234,23 +225,6 @@ const ProcessingPage = ({ progress = 0, file, onBackground }) => {
                   </div>
                 );
               })}
-            </div>
-          </div>
-
-          {/* Live Activity */}
-          <div className="pp-card pp-activity-card">
-            <div className="pp-card-title"><span className="pp-card-icon">📡</span> Live Activity</div>
-            <div className="pp-activity-log">
-              {activity.map((a, i) => (
-                <div key={i} className="pp-activity-row">
-                  <span className="pp-activity-ts">{a.ts}</span>
-                  <span className="pp-activity-msg">{a.msg}</span>
-                </div>
-              ))}
-            </div>
-            <div className="pp-activity-mascots">
-              <Mascot size={36} state={isDone ? 'done' : 'active'} />
-              <div className="pp-speech">…</div>
             </div>
           </div>
 

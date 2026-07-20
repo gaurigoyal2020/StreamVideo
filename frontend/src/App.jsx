@@ -17,6 +17,9 @@ const SceneBg = () => (
     <div className="scene-star s1">✦</div>
     <div className="scene-star s2">✦</div>
     <div className="scene-star s3">·</div>
+    <div className="scene-star s4">✦</div>
+    <div className="scene-star s5">·</div>
+    <div className="scene-star s6">✦</div>
     <div className="scene-hydrangea h1">❋</div>
     <div className="scene-hydrangea h2">❋</div>
     <div className="scene-hydrangea h3">❋</div>
@@ -34,11 +37,11 @@ const navItems = [
   { icon: Settings,        label: 'Settings'   },
 ];
 
-const Sidebar = () => (
+const Sidebar = ({ mascotState }) => (
   <aside className="sidebar">
     <div className="sidebar-logo">
-      <Mascot size={32} state="idle" />
-      <span className="logo-text">HydraSubs</span>
+      <Mascot size={32} state={mascotState} />
+      <span className="logo-text">BloomLore</span>
     </div>
     <nav className="sidebar-nav">
       {navItems.map(({ icon: Icon, label, active }) => (
@@ -152,7 +155,10 @@ function App() {
   /* ── Render ─────────────────────────────────────────────────────── */
   return (
     <div className="app-layout">
-      <Sidebar />
+      {/* Same three-state logic used just below to pick which page to
+          render — the mascot now just mirrors it instead of always
+          showing 'idle' regardless of what's actually happening. */}
+      <Sidebar mascotState={uploading ? 'active' : result ? 'done' : 'idle'} />
 
       <main className="main-content">
 
@@ -183,7 +189,7 @@ function App() {
                   Upload Your Video
                   <span className="title-icon" aria-hidden="true"> 🎬</span>
                 </h1>
-                <p className="page-sub">Let HydraSubs generate accurate subtitles for you</p>
+                <p className="page-sub">Let BloomLore generate accurate subtitles for you</p>
               </div>
               <Mascot size={56} state="idle" className="header-mascot" />
             </div>
@@ -228,9 +234,9 @@ function App() {
                   </div>
                 </div>
 
-                {/* Why HydraSubs */}
+                {/* Why BloomLore */}
                 <div className="features-section">
-                  <h2 className="features-title">✦ Why HydraSubs?</h2>
+                  <h2 className="features-title">✦ Why BloomLore?</h2>
                   <div className="features-grid">
                     {features.map(f => (
                       <div key={f.title} className="feature-card">

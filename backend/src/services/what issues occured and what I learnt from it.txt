@@ -1,0 +1,21 @@
+-> ffmpeg calls:
+/**
+ * Convert video to HLS format (.m3u8 + .ts segments) AND extract the
+ * audio track as MP3, in a single ffmpeg invocation.
+ *
+ * Why one call instead of two: ffmpeg supports multiple outputs from a
+ * single input. Given one -i input, it reads and decodes the source file
+ * ONCE, then feeds that decoded data to both output encoders (HLS + mp3).
+ * Two separate calls (the old approach) each open and decode the file
+ * independently — doubling the most expensive part of this step for no
+ * benefit. The encoded output bytes are identical either way; this only
+ * removes the redundant read/decode pass.
+ This reduced the procession time from 6 minutes to 2.5-3 mins.
+ */
+ // veryfast = x264 spends less time searching for optimal compression.
+    // Trade-off: slightly larger file at the same visual quality. Does NOT
+    // affect transcription/translation accuracy — that's a separate stage
+    // that reads the extracted audio, not this encoded video.
+    //The default was medium
+
+ 
