@@ -12,7 +12,7 @@ import Mascot from './Mascot';
 import './ResultsPage.css';
 
 /* ─── Video Player ───────────────────────────────────────────────── */
-const VideoPlayer = ({ videoUrl, subtitleUrl, translatedSubtitleUrl }) => {
+const VideoPlayer = ({ videoUrl, subtitleUrl, translatedSubtitleUrl, targetLang, originalLang }) => {
   const videoRef = useRef(null);
   const playerRef = useRef(null);
 
@@ -23,8 +23,27 @@ const VideoPlayer = ({ videoUrl, subtitleUrl, translatedSubtitleUrl }) => {
       videoRef.current.appendChild(el);
 
       const tracks = [];
-      if (subtitleUrl) tracks.push({ kind: 'subtitles', src: subtitleUrl, srclang: 'en', label: 'Original' });
-      if (translatedSubtitleUrl) tracks.push({ kind: 'subtitles', src: translatedSubtitleUrl, srclang: 'target', label: 'Translated' });
+      // srclang must be a real language code (e.g. 'en', 'ko'), not a placeholder —
+      // it's what browsers/screen readers use to identify the track's language.
+      // originalLang comes from Deepgram's own language detection (detect_language: true),
+      // already returned by the backend as data.originalLang — falls back to 'en' only if
+      // detection genuinely failed upstream, not as a silent assumption.
+      if (subtitleUrl) {
+        tracks.push({ kind: 'subtitles', src: subtitleUrl, srclang: originalLang || 'en', label: 'Original' });
+      }
+      // The translated track is the one the user actually picked as their target language,
+      // so it's marked `default: true` — mirrors the native <track default> attribute and
+      // tells the browser to show this caption track automatically once playback starts,
+      // instead of requiring the viewer to open the CC menu themselves.
+      if (translatedSubtitleUrl) {
+        tracks.push({
+          kind: 'subtitles',
+          src: translatedSubtitleUrl,
+          srclang: targetLang || 'en',
+          label: 'Translated',
+          default: true,
+        });
+      }
 
       playerRef.current = videojs(el, {
         controls: true, responsive: true, fluid: true,
@@ -38,7 +57,15 @@ const VideoPlayer = ({ videoUrl, subtitleUrl, translatedSubtitleUrl }) => {
         playerRef.current = null;
       }
     };
-  }, [videoUrl, subtitleUrl, translatedSubtitleUrl]);
+    // This effect intentionally runs once per mount, not on every prop change.
+    // ResultsPage renders this component with key={result.lessonId}, so React
+    // fully unmounts + remounts (disposing the old player, creating a new one)
+    // whenever the underlying video genuinely changes. That's deliberate: video.js
+    // has known cross-browser flakiness where `default` on a subtitle track isn't
+    // honored if the track is added dynamically after the player already exists
+    // (works fine at creation time, unreliable via addRemoteTextTrack later). A
+    // clean remount sidesteps that entirely instead of fighting the runtime API.
+  }, []);
 
   return (
     <div className="rp-vjs-wrap" data-vjs-player>
@@ -150,9 +177,12 @@ const ResultsPage = ({ result, file, targetLang, onReset }) => {
             {/* Video */}
             <div className="rp-video-col">
               <VideoPlayer
+                key={result?.lessonId || result?.videoUrl}
                 videoUrl={result?.videoUrl}
                 subtitleUrl={result?.subtitleUrl}
                 translatedSubtitleUrl={result?.translatedSubtitleUrl}
+                targetLang={targetCode}
+                originalLang={result?.originalLang}
               />
             </div>
 

@@ -227,7 +227,7 @@ function App() {
                           <p className="drop-title">Drag &amp; drop your video here</p>
                           <p className="drop-or">or</p>
                           <button className="btn-browse" type="button">📁 Browse Files</button>
-                          <p className="drop-hint">Supports: MP4, MOV, MKV, AVI, WEBM · Max 5 GB</p>
+                          <p className="drop-hint">Supports: MP4, MOV, MKV, AVI, WEBM · Max 2 GB</p>
                         </>
                       )}
                     </div>
