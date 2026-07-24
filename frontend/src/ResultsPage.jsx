@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  Play, Pause, Download, Edit2, Search, RefreshCw,
+  Play, Pause, Download, Edit2, Search,
   Settings, Plus, ChevronRight, MoreHorizontal,
   AlignLeft, Captions, Sparkles, Globe, Clock,
   CheckCircle, BarChart2, Languages, SlidersHorizontal,
@@ -106,6 +106,13 @@ const ResultsPage = ({ result, file, targetLang, onReset }) => {
   const [activeTab, setActiveTab]   = useState('subtitles');
   const [exportFmt, setExportFmt]   = useState('SRT');
   const [searchQ, setSearchQ]       = useState('');
+  // UI-only for now — no backend endpoint exists yet. Real generation is
+  // deferred until transcript storage exists (lessonId today only identifies
+  // a video within a single request/session, it isn't a lookup key into
+  // anything persisted yet — see project handoff doc, item on job queue).
+  // 'idle' | 'pending-backend' — clicking Generate just explains the wait,
+  // it deliberately does NOT fabricate summary text in the meantime.
+  const [summaryState, setSummaryState] = useState('idle');
 
   // Show the TRANSLATED cues when a translation happened — otherwise this
   // tab is stuck showing the original language no matter what target
@@ -190,13 +197,13 @@ const ResultsPage = ({ result, file, targetLang, onReset }) => {
             <div className="rp-sub-panel">
               {/* Tabs */}
               <div className="rp-tabs">
-                {['subtitles', 'transcript', 'ai-summary'].map(t => (
+                {['subtitles', 'transcript'].map(t => (
                   <button
                     key={t}
                     className={`rp-tab ${activeTab === t ? 'rp-tab--active' : ''}`}
                     onClick={() => setActiveTab(t)}
                   >
-                    {t === 'subtitles' ? 'Subtitles' : t === 'transcript' ? 'Transcript' : 'AI Summary'}
+                    {t === 'subtitles' ? 'Subtitles' : 'Transcript'}
                   </button>
                 ))}
               </div>
@@ -258,34 +265,40 @@ const ResultsPage = ({ result, file, targetLang, onReset }) => {
                 </div>
               )}
 
-              {/* AI Summary Tab */}
-              {activeTab === 'ai-summary' && (
-                <div className="rp-aisummary">
-                  <p className="rp-aisummary-text">
-                    {result?.transcript
-                      ? `This video covers: "${result.transcript.slice(0, 200)}…" — transcribed with high accuracy across ${subtitles.length} segments.`
-                      : 'AI summary not available.'}
-                  </p>
-                </div>
-              )}
             </div>
           </div>
 
-          {/* AI Summary card */}
+          {/* AI Summary card — generation is on-demand and NOT wired to a real
+              backend yet (deliberately deferred, see chat history). This is UI
+              scaffolding only: clicking Generate does not call an API or
+              fabricate summary text — it just surfaces that the feature is
+              coming. When the real endpoint exists, replace the onClick below
+              with an actual request (e.g. POST /api/lessons/:lessonId/summary)
+              and swap summaryState to something like 'loading' -> 'ready' with
+              the real returned text. */}
           <div className="rp-card rp-aisummary-card">
             <div className="rp-aisummary-left">
               <div className="rp-aisummary-head">
                 <Sparkles size={16} className="rp-spark" />
                 <span>AI Summary</span>
-                <button className="rp-btn-ghost rp-regen">
-                  <RefreshCw size={13} /> Regenerate
-                </button>
               </div>
-              <p className="rp-aisummary-body">
-                {result?.transcript
-                  ? `This video is an engaging introduction where the creator covers key topics. ${result.transcript.slice(0, 180).trim()}…`
-                  : 'AI summary will appear here once processing is complete.'}
-              </p>
+              {summaryState === 'idle' ? (
+                <>
+                  <p className="rp-aisummary-body rp-aisummary-empty">
+                    No summary generated yet.
+                  </p>
+                  <button
+                    className="rp-btn-ghost rp-regen"
+                    onClick={() => setSummaryState('pending-backend')}
+                  >
+                    <Sparkles size={13} /> Generate Summary
+                  </button>
+                </>
+              ) : (
+                <p className="rp-aisummary-body rp-aisummary-empty">
+                  Summary generation is coming soon — this feature is still being built.
+                </p>
+              )}
             </div>
             <div className="rp-aisummary-mascots">
               <Mascot size={52} state="done" />
