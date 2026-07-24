@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════
-   HydraSubs — Processing Page Styles
+   BloomLore — Processing Page Styles
    Drop at: frontend/src/ProcessingPage.css
    ═══════════════════════════════════════════════════════════════ */
 
@@ -398,11 +398,8 @@
 .pp-proj-key { color: var(--text-muted); }
 .pp-proj-val { color: var(--text-secondary); font-weight: 500; text-align: right; }
 
-/* Processing Steps list — this card now grows to fill the space the
-   removed Live Activity card used to take up, and the steps spread out
-   evenly across that space instead of bunching at the top. */
-.pp-steps-card { flex: 1; display: flex; flex-direction: column; }
-.pp-steps-list { flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; gap: 0; }
+/* Processing Steps list */
+.pp-steps-list { display: flex; flex-direction: column; gap: 0; }
 
 .pp-step-item {
   display: flex; align-items: flex-start; gap: 9px;
@@ -428,6 +425,39 @@
 .pp-step-info { display: flex; flex-direction: column; gap: 1px; }
 .pp-step-name { font-size: 0.78rem; font-weight: 600; color: var(--text-primary); }
 .pp-step-desc { font-size: 0.68rem; color: var(--text-muted); }
+
+/* Live Activity */
+.pp-activity-card { position: relative; }
+
+.pp-activity-log {
+  display: flex; flex-direction: column; gap: 0;
+  margin-bottom: 0.85rem;
+}
+.pp-activity-row {
+  display: flex; gap: 8px; align-items: baseline;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(139,92,246,0.07);
+  animation: pp-in 0.3s ease both;
+}
+.pp-activity-row:last-child { border: none; }
+.pp-activity-ts  { font-size: 0.68rem; color: var(--purple-bright); font-variant-numeric: tabular-nums; white-space: nowrap; flex-shrink: 0; }
+.pp-activity-msg { font-size: 0.72rem; color: var(--text-secondary); }
+
+.pp-activity-mascots {
+  display: flex; align-items: flex-end; gap: 6px;
+  justify-content: flex-end;
+  position: relative;
+  padding-top: 4px;
+}
+.pp-speech {
+  position: absolute; top: -10px; right: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--purple-border);
+  border-radius: 8px 8px 0 8px;
+  font-size: 0.65rem; color: var(--text-secondary);
+  padding: 2px 6px;
+  animation: pp-pulse 2s ease-in-out infinite;
+}
 
 /* ── Shared Animations ───────────────────────────────────────────── */
 @keyframes pp-float {

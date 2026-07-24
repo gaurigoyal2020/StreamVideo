@@ -25,7 +25,7 @@ export const errorHandler = (err, req, res, _next) => {
   if (err instanceof multer.MulterError) {
     const message =
       err.code === "LIMIT_FILE_SIZE"
-        ? `File too large. Maximum size is ${process.env.MAX_FILE_SIZE_MB ?? 500}MB`
+        ? `File too large. Maximum size is ${env.maxFileSizeMb}MB`
         : err.message;
 
     return res.status(400).json({ success: false, error: message });
